@@ -129,6 +129,7 @@ class Win32Emulator(WindowsEmulator):
         """
         Load a module into the emulator space from the specified path
         """
+        self._init_name(path, data)
         pe = self.load_pe(path=path, data=data, imp_id=w32common.IMPORT_HOOK_ADDR)
 
         if pe.arch == _arch.ARCH_X86:
@@ -148,17 +149,6 @@ class Win32Emulator(WindowsEmulator):
 
             if not self.disasm_eng:
                 self.disasm_eng = cs.Cs(cs.CS_ARCH_X86, disasm_mode)
-
-        if not data:
-            file_name = os.path.basename(path)
-            mod_name = os.path.splitext(file_name)[0]
-
-        else:
-            mod_hash = hashlib.sha256()
-            mod_hash.update(data)
-            mod_hash = mod_hash.hexdigest()
-            mod_name = mod_hash
-            file_name = "%s.exe" % (mod_name)
 
         self.api = WindowsApi(self)
 
@@ -246,7 +236,7 @@ class Win32Emulator(WindowsEmulator):
                     pass
 
         self.mem_map(pe.image_size, base=base,
-                tag='emu.module.%s' % (mod_name))
+                tag='emu.module.%s' % (self.mod_name))
 
         self.modules.append((pe, ranges, emu_path))
         self.mem_write(pe.base, pe.mapped_image)
@@ -436,6 +426,18 @@ class Win32Emulator(WindowsEmulator):
 
         return
 
+    def _init_name(self, path, data=None):
+        if not data:
+            self.file_name = os.path.basename(path)
+            self.mod_name = os.path.splitext(self.file_name)[0]
+        else:
+            mod_hash = hashlib.sha256()
+            mod_hash.update(data)
+            mod_hash = mod_hash.hexdigest()
+            self.mod_name = mod_hash
+            self.file_name = f"{self.mod_name}.exe"
+        self.bin_base_name = os.path.basename(self.file_name)
+
     def emulate_module(self, path):
         """
         Load and emulate binary from the given path
@@ -448,7 +450,7 @@ class Win32Emulator(WindowsEmulator):
         Load position independent code (i.e. shellcode) to prepare for emulation
         """
         sc_hash = None
-
+        self._init_name(path, data)
         if arch == "x86":
             arch = _arch.ARCH_X86
         elif arch in ("x64", "amd64"):
@@ -477,6 +479,7 @@ class Win32Emulator(WindowsEmulator):
             raise Win32EmuError("Unsupported architecture: %s" % self.arch)
 
         self.emu_eng.init_engine(_arch.ARCH_X86, self.arch)
+
 
         if not self.disasm_eng:
             self.disasm_eng = cs.Cs(cs.CS_ARCH_X86, disasm_mode)
