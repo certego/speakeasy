@@ -51,6 +51,7 @@ class BinaryEmulator(MemoryManager):
 
         self.emu_version = self.get_emu_version()
         self.logger = logger
+        self.strings = set()
 
     def log_info(self, msg):
         if self.logger:
