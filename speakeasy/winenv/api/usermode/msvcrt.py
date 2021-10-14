@@ -489,7 +489,7 @@ class Msvcrt(api.ApiHandler):
 
         out_time = TIME_BASE
         if destTime:
-            self.mem_write(destTime, out_time)
+            self.mem_write(destTime, out_time.to_bytes(emu.get_ptr_size(), "little"))
 
         return out_time
 
