@@ -8,7 +8,7 @@ import json
 import hashlib
 
 from collections import deque
-from base64 import b64encode, b64decode
+from base64 import b64encode
 
 PROC_CREATE = "create"
 MEM_ALLOC = "mem_alloc"

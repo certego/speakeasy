@@ -6,7 +6,6 @@ import fnmatch
 import traceback
 from typing import List, Tuple, Dict
 
-import binascii
 
 import speakeasy.common as common
 import speakeasy.winenv.arch as e_arch
