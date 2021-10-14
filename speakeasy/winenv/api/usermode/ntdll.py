@@ -216,9 +216,9 @@ class Ntdll(api.ApiHandler):
 
         return rv
 
-    @apihook('NtWaitForSingleObject', argc=3)
+    @apihook("NtWaitForSingleObject", argc=3)
     def NtWaitForSingleObject(self, emu, argv, ctx={}):
-        '''
+        """
         NTSYSAPI
         NTSTATUS
         NtWaitForSingleObject(
@@ -226,7 +226,7 @@ class Ntdll(api.ApiHandler):
             BOOLEAN        Alertable,
             PLARGE_INTEGER Timeout
         );
-        '''
+        """
         hHandle, alertable, timeout = argv
 
         # Other documented return status are:

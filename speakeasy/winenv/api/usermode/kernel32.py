@@ -12,7 +12,6 @@ import speakeasy.winenv.defs.nt.ddk as ddk
 import speakeasy.common as common
 import speakeasy.windows.common as winemu
 from speakeasy.errors import ApiEmuError
-from speakeasy.profiler import Run
 import speakeasy.winenv.defs.windows.windows as windefs
 import speakeasy.winenv.defs.windows.kernel32 as k32types
 
@@ -4047,7 +4046,7 @@ class Kernel32(api.ApiHandler):
         dest = int.from_bytes(dest_bytes, "little")
 
         if dest == Comperand:
-            self.mem_write(pDest, ExChange.to_bytes(4, 'little'))
+            self.mem_write(pDest, ExChange.to_bytes(4, "little"))
 
         return dest
 

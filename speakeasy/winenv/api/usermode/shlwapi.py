@@ -55,14 +55,14 @@ class Shlwapi(api.ApiHandler):
 
         return rv
 
-    @apihook('StrStr', argc=2)
+    @apihook("StrStr", argc=2)
     def StrStr(self, emu, argv, ctx={}):
-        '''
+        """
         PCSTR StrStr(
             PCSTR pszFirst,
             PCSTR pszSrch
         );
-        '''
+        """
 
         hay, needle = argv
 

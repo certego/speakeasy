@@ -93,8 +93,9 @@ def emulate_binary(
                 se.add_api_hook(value[0], "*", key, value[1])
                 for key, value in FAST_HOOKS.items()
             ]
-            se.run_module(module, all_entrypoints=True,
-                    emulate_children=emulate_children)
+            se.run_module(
+                module, all_entrypoints=True, emulate_children=emulate_children
+            )
 
     finally:
 
@@ -270,7 +271,7 @@ class Main(object):
 
 
 def main():
-    """ speakeasy command line entrypoint """
+    """speakeasy command line entrypoint"""
 
     parser = argparse.ArgumentParser(
         description="Emulate a Windows binary with speakeasy"
@@ -381,10 +382,16 @@ def main():
         "PEs from this directory will be loaded into the\n"
         "emulated address space",
     )
-    parser.add_argument('-k', '--emulate-children', action='store_true', dest='emulate_children',
-                        required=False, help='Emulate any processes created with\n'
-                                             'the CreateProcess APIs after the\n'
-                                             'input file finishes emulating')
+    parser.add_argument(
+        "-k",
+        "--emulate-children",
+        action="store_true",
+        dest="emulate_children",
+        required=False,
+        help="Emulate any processes created with\n"
+        "the CreateProcess APIs after the\n"
+        "input file finishes emulating",
+    )
     parser.add_argument(
         "--no-mp",
         action="store_true",
@@ -394,7 +401,6 @@ def main():
         "instead of a child process. Useful when debugging"
         "speakeasy itself (using pdb.set_trace()).\n",
     )
-
 
     Main(parser)
 

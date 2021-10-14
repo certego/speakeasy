@@ -252,12 +252,13 @@ class Speakeasy(object):
         self._init_hooks()
 
         if isinstance(self.emu, Win32Emulator):
-            return self.emu.run_module(module=module,
-                    all_entrypoints=all_entrypoints,
-                    emulate_children=emulate_children)
+            return self.emu.run_module(
+                module=module,
+                all_entrypoints=all_entrypoints,
+                emulate_children=emulate_children,
+            )
         else:
-            return self.emu.run_module(module=module,
-                    all_entrypoints=all_entrypoints)
+            return self.emu.run_module(module=module, all_entrypoints=all_entrypoints)
 
     def load_shellcode(self, fpath, arch, data=None) -> int:
         """

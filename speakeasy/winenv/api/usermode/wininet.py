@@ -19,7 +19,6 @@ def is_ip_address(ip):
 
 
 class Wininet(api.ApiHandler):
-
     """
     Implements network functions from wininet.dll
     """
@@ -419,7 +418,7 @@ class Wininet(api.ApiHandler):
             req.get_server() + req.objname.path,
             port,
             headers=req_str,
-            proto="https" if not req.is_secure() else "http",
+            proto="https" if port == 443 else "http",
             method=req.verb.upper(),
         )
         return req.get_handle()

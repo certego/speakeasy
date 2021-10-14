@@ -97,7 +97,7 @@ class Ws2_32(api.ApiHandler):
 
         return fd
 
-    @apihook('WSAIoctl', argc=9, conv=_arch.CALL_CONV_STDCALL)
+    @apihook("WSAIoctl", argc=9, conv=_arch.CALL_CONV_STDCALL)
     def WSAIoctl(self, emu, argv, ctx={}):
         """
         int WSAAPI WSAIoctl(

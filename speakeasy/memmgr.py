@@ -255,7 +255,7 @@ class MemoryManager(object):
         size = map.size
 
         # Exclude old memory region in tag name
-        tag = map.tag[:map.tag.rfind(".")]
+        tag = map.tag[: map.tag.rfind(".")]
 
         contents = self.mem_read(map.base, size)
 
@@ -263,7 +263,7 @@ class MemoryManager(object):
         self.mem_free(map.base)
 
         newmem = self.mem_map(size, base=to, perms=prot, tag=tag)
-        
+
         if newmem != to:
             return -1
 

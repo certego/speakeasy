@@ -1,6 +1,5 @@
 # Copyright (C) 2020 FireEye, Inc. All Rights Reserved.
 
-import io
 import os
 import ntpath
 import traceback
@@ -882,7 +881,7 @@ class WindowsEmulator(BinaryEmulator):
         # quotes, those are kept, so we have to delete them
         file_path = shlex.split(path, posix=False)[0]
 
-        if file_path[0] == '\"' and file_path[len(file_path) - 1] == '\"':
+        if file_path[0] == '"' and file_path[len(file_path) - 1] == '"':
             file_path = file_path[1:-1]
 
         p = self.om.new_object(objman.Process)

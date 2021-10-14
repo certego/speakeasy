@@ -1,6 +1,5 @@
 # Copyright (C) 2020 FireEye, Inc. All Rights Reserved.
 
-import binascii
 import os
 import shlex
 
@@ -234,8 +233,7 @@ class Win32Emulator(WindowsEmulator):
                     # XXX what to do here
                     pass
 
-        self.mem_map(pe.image_size, base=base,
-                tag='emu.module.%s' % (self.mod_name))
+        self.mem_map(pe.image_size, base=base, tag="emu.module.%s" % (self.mod_name))
 
         self.modules.append((pe, ranges, emu_path))
         self.mem_write(pe.base, pe.mapped_image)
@@ -407,8 +405,7 @@ class Win32Emulator(WindowsEmulator):
         while len(self.child_processes) > 0:
             child = self.child_processes.pop(0)
 
-            child.pe = self.load_module(data=child.pe_data,
-                    first_time_setup=False)
+            child.pe = self.load_module(data=child.pe_data, first_time_setup=False)
             self.prepare_module_for_emulation(child.pe, all_entrypoints)
 
             self.command_line = child.cmdline
@@ -478,7 +475,6 @@ class Win32Emulator(WindowsEmulator):
             raise Win32EmuError("Unsupported architecture: %s" % self.arch)
 
         self.emu_eng.init_engine(_arch.ARCH_X86, self.arch)
-
 
         if not self.disasm_eng:
             self.disasm_eng = cs.Cs(cs.CS_ARCH_X86, disasm_mode)

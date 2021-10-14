@@ -84,7 +84,7 @@ class File(object):
         new = File(self.path, config=self.config, data=self.data.getvalue())
         new.is_dir = self.is_dir
         return new
-        
+
     def get_handle(self):
         hfile = File.curr_handle
         File.curr_handle += 4
