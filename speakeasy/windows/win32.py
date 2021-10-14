@@ -155,7 +155,7 @@ class Win32Emulator(WindowsEmulator):
         cd = self.get_cd()
         if not cd.endswith("\\"):
             cd += "\\"
-        emu_path = cd + file_name
+        emu_path = cd + self.file_name
 
         if not data:
             with open(path, "rb") as f:
@@ -168,7 +168,6 @@ class Win32Emulator(WindowsEmulator):
             self.profiler.strings["unicode"] = [
                 u[1] for u in self.get_unicode_strings(data)
             ]
-        self.bin_base_name = os.path.basename(file_name)
         # Set the emulated path
         emu_path = ""
         self.cd = self.get_cd()
