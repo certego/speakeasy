@@ -236,7 +236,7 @@ class Wininet(api.ApiHandler):
             port,
             headers=req_str,
             data=body,
-            proto="https" if not req.is_secure() else "http",
+            proto="https" if req.is_secure() else "http",
             method=req.verb.upper(),
         )
         return rv
