@@ -4795,8 +4795,14 @@ class Kernel32(api.ApiHandler):
             0x10: "VER_SERVICEPACKMINOR",
             0x40: "VER_SUITENAME",
         }
-        argv[2] = CONDITION_MAPPING[cond]
-        argv[1] = TYPE_MASK_MAPPING[type_mask]
+        try:
+            argv[2] = CONDITION_MAPPING[cond]
+        except KeyError:
+            pass
+        try:
+            argv[1] = TYPE_MASK_MAPPING[type_mask]
+        except KeyError:
+            pass
 
         return 0
 
