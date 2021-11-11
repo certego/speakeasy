@@ -1,4 +1,5 @@
 # Copyright (C) 2020 FireEye, Inc. All Rights Reserved.
+import operator
 
 import os
 import ntpath
@@ -4774,6 +4775,28 @@ class Kernel32(api.ApiHandler):
         """
         # Stub
         con_mask, type_mask, cond = argv
+
+        CONDITION_MAPPING = {
+            1: "VER_EQUAL",
+            2: "VER_GREATER",
+            3: "VER_GREATER_EQUAL",
+            4: "VER_LESS",
+            5: "VER_LESS_EQUAL",
+            6: "VER_AND",
+            7: "VER_OR",
+        }
+        TYPE_MASK_MAPPING = {
+            0x4: "VER_BUILDNUMBER",
+            0x2: "VER_MAJORVERSION",
+            0x1: "VER_MINORVERSION",
+            0x8: "VER_PLATFORMID",
+            0x80: "VER_PRODUCT_TYPE",
+            0x20: "VER_SERVICEPACKMAJOR",
+            0x10: "VER_SERVICEPACKMINOR",
+            0x40: "VER_SUITENAME",
+        }
+        argv[2] = CONDITION_MAPPING[cond]
+        argv[1] = TYPE_MASK_MAPPING[type_mask]
 
         return 0
 
