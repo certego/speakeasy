@@ -325,7 +325,8 @@ class WinKernelEmulator(WindowsEmulator, IoManager):
         """
         Begin emulation fo a previously loaded kernel module
         """
-
+        if entrypoints is None:
+            entrypoints = []
         self.all_entrypoints = all_entrypoints
 
         # Create the service key for the driver

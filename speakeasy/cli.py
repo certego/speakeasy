@@ -66,13 +66,15 @@ def emulate_binary(
     dump_path="",
     raw_offset=0x0,
     emulate_children=False,
+    entrypoints=None
 ):
     """
     Setup the binary for emulation
     """
 
     logger = get_logger()
-
+    if  entrypoints is None:
+        entrypoints = []
     try:
         report = None
         se = Speakeasy(config=cfg, logger=logger, argv=argv, exit_event=exit_event)
@@ -94,7 +96,7 @@ def emulate_binary(
                 for key, value in FAST_HOOKS.items()
             ]
             se.run_module(
-                module, all_entrypoints=True, emulate_children=emulate_children
+                module, all_entrypoints=True if not entrypoints else False, emulate_children=emulate_children, entrypoints=entrypoints
             )
 
     finally:
@@ -142,6 +144,7 @@ class Main(object):
         self.timeout = 0
         self.argv = args.params
         self.logger = get_logger()
+        self.entrypoints = args.entrypoints
 
         if not self.config_path:
             self.config_path = "./speakeasy/configs/default.json"
@@ -400,6 +403,15 @@ def main():
         help="Run emulation in the current process to assist\n"
         "instead of a child process. Useful when debugging"
         "speakeasy itself (using pdb.set_trace()).\n",
+    )
+    parser.add_argument(
+        "-e",
+        "--entrypoints",
+        default=[],
+        action="store",
+        nargs="*",
+        dest="entrypoints",
+        required=False,
     )
 
     Main(parser)

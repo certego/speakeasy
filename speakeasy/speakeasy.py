@@ -235,7 +235,7 @@ class Speakeasy(object):
         return self.emu.load_module(path=path, data=data)
 
     @check_init
-    def run_module(self, module, all_entrypoints=False, emulate_children=False) -> None:
+    def run_module(self, module, all_entrypoints=False, emulate_children=False, entrypoints=None) -> None:
         """
         Run a previously loaded module through the configured emulator
 
@@ -256,9 +256,10 @@ class Speakeasy(object):
                 module=module,
                 all_entrypoints=all_entrypoints,
                 emulate_children=emulate_children,
+                entrypoints=entrypoints,
             )
         else:
-            return self.emu.run_module(module=module, all_entrypoints=all_entrypoints)
+            return self.emu.run_module(module=module, all_entrypoints=all_entrypoints, entrypoints=entrypoints)
 
     def load_shellcode(self, fpath, arch, data=None) -> int:
         """

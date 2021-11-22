@@ -255,7 +255,7 @@ class Win32Emulator(WindowsEmulator):
                 self.mem_write(addr, data_ptr.to_bytes(self.get_ptr_size(), "little"))
         return pe
 
-    def prepare_module_for_emulation(self, module, all_entrypoints):
+    def prepare_module_for_emulation(self, module, all_entrypoints, entrypoints):
         if not module:
             self.stop()
             raise Win32EmuError("Module not found")
@@ -296,7 +296,7 @@ class Win32Emulator(WindowsEmulator):
 
         self.add_run(run)
 
-        if all_entrypoints:
+        if all_entrypoints or entrypoints:
             # Only emulate a subset of all the exported functions
             # There are some modules (such as the windows kernel) with
             # thousands of exports
@@ -310,61 +310,65 @@ class Win32Emulator(WindowsEmulator):
                 for exp in exports:
                     if exp.name in ("DllMain",):
                         continue
-                    run = Run()
-                    if exp.name:
-                        fn = exp.name
-                    else:
-                        fn = "no_name"
+                    if all_entrypoints or exp.name in entrypoints:
+                        run = Run()
+                        if exp.name:
+                            fn = exp.name
+                        else:
+                            fn = "no_name"
 
-                    run.type = "export.%s" % (fn)
-                    run.start_addr = exp.address
-                    if exp.name == "ServiceMain":
-                        # ServiceMain accepts a (argc, argv) pair like main().
-                        #
-                        # now, we're not exactly sure if we're in A or W mode.
-                        # maybe there are some hints we could take to guess this.
-                        # instead, we'll assume W mode and use default service name "IPRIP".
-                        #
-                        # hack: if we're actually in A mode, then string routines
-                        # will think the service name is "I" which isn't perfect,
-                        # but might still be good enough.
-                        #
-                        # layout:
-                        #   argc: 1
-                        #   argv:
-                        #     0x00:    (argv[0]) pointer to +0x10 -+
-                        #     0x04/08: (argv[1]) 0x0               |
-                        #     0x10:    "IPRIP"  <------------------+
-                        svc_name = "IPRIP\x00".encode("utf-16le")
-                        argc = 1
-                        argv = self.mem_map(
-                            len(svc_name) + 0x10,
-                            tag="emu.export_ServiceMain_argv",
-                            base=0x41420000,
-                        )
+                        run.type = "export.%s" % (fn)
+                        run.start_addr = exp.address
+                        if exp.name == "ServiceMain":
+                            # ServiceMain accepts a (argc, argv) pair like main().
+                            #
+                            # now, we're not exactly sure if we're in A or W mode.
+                            # maybe there are some hints we could take to guess this.
+                            # instead, we'll assume W mode and use default service name "IPRIP".
+                            #
+                            # hack: if we're actually in A mode, then string routines
+                            # will think the service name is "I" which isn't perfect,
+                            # but might still be good enough.
+                            #
+                            # layout:
+                            #   argc: 1
+                            #   argv:
+                            #     0x00:    (argv[0]) pointer to +0x10 -+
+                            #     0x04/08: (argv[1]) 0x0               |
+                            #     0x10:    "IPRIP"  <------------------+
+                            svc_name = "IPRIP\x00".encode("utf-16le")
+                            argc = 1
+                            argv = self.mem_map(
+                                len(svc_name) + 0x10,
+                                tag="emu.export_ServiceMain_argv",
+                                base=0x41420000,
+                            )
 
-                        self.write_ptr(argv, argv + 0x10)
-                        self.mem_write(argv + 0x10, svc_name)
+                            self.write_ptr(argv, argv + 0x10)
+                            self.mem_write(argv + 0x10, svc_name)
 
-                        run.args = [argc, argv]
-                    else:
-                        # Here we set dummy args to pass into the export function
-                        run.args = args
-                    # Store these runs and only queue them before the unload
-                    # routine this is because some exports may not be ready to
-                    # be called yet
-                    self.add_run(run)
+                            run.args = [argc, argv]
+                        else:
+                            # Here we set dummy args to pass into the export function
+                            run.args = args
+                        # Store these runs and only queue them before the unload
+                        # routine this is because some exports may not be ready to
+                        # be called yet
+                        self.add_run(run)
 
         return
 
-    def run_module(self, module, all_entrypoints=False, emulate_children=False):
+    def run_module(self, module, all_entrypoints=False, emulate_children=False, entrypoints=None):
         """
         Begin emulating a previously loaded module
 
         Arguments:
             module: Module to emulate
         """
-        self.prepare_module_for_emulation(module, all_entrypoints)
+        if entrypoints is None:
+            entrypoints = []
+
+        self.prepare_module_for_emulation(module, all_entrypoints, entrypoints)
 
         # Create an empty process object for the module if none is
         # supplied, only do this for the main module
@@ -406,7 +410,7 @@ class Win32Emulator(WindowsEmulator):
             child = self.child_processes.pop(0)
 
             child.pe = self.load_module(data=child.pe_data, first_time_setup=False)
-            self.prepare_module_for_emulation(child.pe, all_entrypoints)
+            self.prepare_module_for_emulation(child.pe, all_entrypoints, entrypoints)
 
             self.command_line = child.cmdline
 
