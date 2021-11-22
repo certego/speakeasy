@@ -1,4 +1,5 @@
 # Copyright (C) 2020 FireEye, Inc. All Rights Reserved.
+from typing import List
 
 import os
 import ntpath
@@ -320,7 +321,7 @@ class WinKernelEmulator(WindowsEmulator, IoManager):
             self.processes = self.get_processes()
         return self.curr_process
 
-    def run_module(self, module, all_entrypoints=False):
+    def run_module(self, module, all_entrypoints=False, entrypoints:List[str]=None):
         """
         Begin emulation fo a previously loaded kernel module
         """
@@ -352,7 +353,7 @@ class WinKernelEmulator(WindowsEmulator, IoManager):
             run.args = [drv.address, drv.reg_path_ptr]
             self.add_run(run)
 
-        if self.all_entrypoints:
+        if self.all_entrypoints or entrypoints:
             # Only emulate a subset of all the exported functions
             # There are some modules (such as the windows kernel) with thousands of exports
             exports = [k for k in module.get_exports()[:MAX_EXPORTS_TO_EMULATE]]
@@ -362,18 +363,19 @@ class WinKernelEmulator(WindowsEmulator, IoManager):
                     self.mem_map(8, tag="emu.export_arg_%d" % (i)) for i in range(4)
                 ]
                 for exp in exports:
-                    run = Run()
-                    if exp.name:
-                        fn = exp.name
-                    else:
-                        fn = "no_name"
-                    run.type = "export.%s" % (fn)
-                    run.start_addr = exp.address
-                    # Here we set dummy args to pass into the export function
-                    run.args = args
-                    # Store these runs and only queue them before the unload routine
-                    # this is because some exports may not be ready to be called yet
-                    self.delayed_runs.append(run)
+                    if all_entrypoints or exp.name in entrypoints:
+                        run = Run()
+                        if exp.name:
+                            fn = exp.name
+                        else:
+                            fn = "no_name"
+                        run.type = "export.%s" % (fn)
+                        run.start_addr = exp.address
+                        # Here we set dummy args to pass into the export function
+                        run.args = args
+                        # Store these runs and only queue them before the unload routine
+                        # this is because some exports may not be ready to be called yet
+                        self.delayed_runs.append(run)
 
         self.start()
 
