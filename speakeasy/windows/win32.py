@@ -293,8 +293,9 @@ class Win32Emulator(WindowsEmulator):
 
         if main_exe:
             self.user_modules = [main_exe] + self.user_modules
-
-        self.add_run(run)
+        # we consider this run only if all entry_points is selected or DLL_PROCESS_ATTACH is in the entrypoints
+        if all_entrypoints or "DLL_PROCESS_ATTACH" in entrypoints:
+            self.add_run(run)
 
         if all_entrypoints or entrypoints:
             # Only emulate a subset of all the exported functions
