@@ -1,7 +1,7 @@
 # Copyright (C) 2020 FireEye, Inc. All Rights Reserved.
 
 import os
-import zlib
+import binascii
 
 from .. import api
 
@@ -246,9 +246,18 @@ class Ntdll(api.ApiHandler):
         argv[0] = string
         return len(string)
 
-    @apihook("RtlComputeCrc32", argc=3)
+    @apihook('RtlComputeCrc32', argc=3)
     def RtlComputeCrc32(self, emu, argv, ctx={}):
+        '''
+        DWORD RtlComputeCrc32(
+            DWORD       dwInitial,
+            const BYTE* pData,
+            INT         iLen
+        )
+        '''
         dwInitial, pData, iLen = argv
-        string = self.read_mem_string(pData, 1)
-        crc = zlib.crc32(string.encode(), dwInitial) % (1 << 32)
-        return crc
+
+        data_to_compute = self.mem_read(pData, iLen)
+        dwInitial = binascii.crc32(data_to_compute)
+
+        return dwInitial

@@ -9,6 +9,7 @@ import speakeasy.winenv.defs.windows.windows as windef
 from .. import api
 
 EINVAL = 22
+ERANGE = 34
 _TRUNCATE = 0xFFFFFFFF
 
 TIME_BASE = 1576292568
@@ -69,6 +70,94 @@ class Msvcrt(api.ApiHandler):
             self.emu.mem_write(cmdln, p_cmdln.to_bytes(ptr_size, "little"))
             self.emu.mem_write(p_cmdln, _argv)
         return cmdln
+
+    @apihook('__p__acmdln', argc=0)
+    def __p__acmdln(self, emu, argv, ctx={}):
+        """Command line global CRT variable"""
+
+        cmdln = self._acmdln()
+
+        return cmdln
+
+    @apihook('_onexit', argc=1, conv=e_arch.CALL_CONV_CDECL)
+    def _onexit(self, emu, argv, ctx={}):
+        """
+        _onexit_t _onexit(
+            _onexit_t function
+        )
+        """
+
+        func, = argv
+        return func
+
+    @apihook('mbstowcs_s', argc=5, conv=e_arch.CALL_CONV_CDECL)
+    def mbstowcs_s(self, emu, argv, ctx={}):
+        """
+        errno_t mbstowcs_s(
+            size_t *pReturnValue,
+            wchar_t *wcstr,
+            size_t sizeInWords,
+            const char *mbstr,
+            size_t count
+        )
+        """
+
+        pReturnValue, wcstr, sizeInWords, mbstr, count = argv
+
+        rv = 0
+        if pReturnValue:
+            self.mem_write(pReturnValue, struct.pack("<I",0))
+
+        # Sanity checks
+        if sizeInWords > 0 and not wcstr:
+            rv = EINVAL
+        elif not mbstr:
+            rv = EINVAL
+        elif sizeInWords == 0 and wcstr:
+            rv = EINVAL
+        else:
+            # Convert the string
+            mbs = self.read_mem_string(mbstr, 1)
+            argv[3] = mbs
+            mbs += '\x00'
+            ws = mbs.encode('utf-16le')
+
+            if (len(ws) / 2 > sizeInWords and count != _TRUNCATE) and (count >= sizeInWords):
+                # Buffer too small
+                rv = ERANGE
+            else:
+                if count == _TRUNCATE:
+                    self.mem_write(wcstr, ws[:(sizeInWords - 1) * 2])
+                    self.mem_write(pReturnValue, struct.pack("<I",sizeInWords))
+                else:
+                    self.mem_write(wcstr, ws[:count * 2])
+                    self.mem_write(pReturnValue, struct.pack("<I",count + 1))
+
+        return rv
+
+    @apihook('_wcsnicmp', argc=3, conv=e_arch.CALL_CONV_CDECL)
+    def _wcsnicmp(self, emu, argv, ctx={}):
+        """
+        int _wcsnicmp(
+            const wchar_t *string1,
+            const wchar_t *string2,
+            size_t count
+        )
+        """
+
+        string1, string2, count = argv
+        rv = 1
+
+        ws1 = self.read_wide_string(string1, max_chars=count)
+        ws2 = self.read_wide_string(string2, max_chars=count)
+
+        argv[0] = ws1
+        argv[1] = ws2
+
+        if ws1.lower() == ws2.lower():
+            rv = 0
+
+        return rv
 
     # Reference: https://wiki.osdev.org/Visual_C%2B%2B_Runtime
     @apihook("_initterm_e", argc=2, conv=e_arch.CALL_CONV_CDECL)
@@ -1492,3 +1581,97 @@ class Msvcrt(api.ApiHandler):
         s = self.read_wide_string(wcstr, count)
         self.write_string(s, mbstr)
         return len(s.encode("ascii"))
+
+    @apihook('_stricmp', argc=2, conv=e_arch.CALL_CONV_CDECL)
+    def _stricmp(self, emu, argv, ctx={}):
+        """
+        int _stricmp(
+                const char *string1,
+                const char *string2
+                );
+        """
+        string1, string2 = argv
+        rv = 1
+
+        if not string1 or not string2:
+            return rv
+
+        cs1 = self.read_string(string1)
+        cs2 = self.read_string(string2)
+
+        argv[0] = cs1
+        argv[1] = cs2
+
+        if cs1.lower() == cs2.lower():
+            rv = 0
+
+        return rv
+
+    @apihook('_wcsicmp', argc=2, conv=e_arch.CALL_CONV_CDECL)
+    def _wcsicmp(self, emu, argv, ctx={}):
+        """
+        int wcsicmp(
+            const wchar_t *string1,
+            const wchar_t *string2
+            );
+        """
+        string1, string2 = argv
+        rv = 1
+
+        ws1 = self.read_wide_string(string1)
+        ws2 = self.read_wide_string(string2)
+
+        argv[0] = ws1
+        argv[1] = ws2
+
+        if ws1.lower() == ws2.lower():
+            rv = 0
+
+        return rv
+
+    @apihook('wcscmp', argc=2, conv=e_arch.CALL_CONV_CDECL)
+    def wcscmp(self, emu, argv, ctx={}):
+        """
+        int wcscmp(
+            const wchar_t *string1,
+            const wchar_t *string2,
+        );
+        """
+        s1, s2 = argv
+        rv = 1
+
+        string1 = self.read_wide_string(s1)
+        string2 = self.read_wide_string(s2)
+        if string1 == string2:
+            rv = 0
+        argv[0] = string1
+        argv[1] = string2
+
+        return rv
+    
+    @apihook('_snwprintf', argc=e_arch.VAR_ARGS, conv=e_arch.CALL_CONV_CDECL)
+    def _snwprintf(self, emu, argv, ctx={}):
+        """
+               int _snwprintf(
+                   wchar_t *buffer,
+                   size_t count,
+                   const wchar_t *format [,
+                   argument] ...
+                   );
+               """
+        buf, cnt, fmt = emu.get_func_argv(e_arch.CALL_CONV_CDECL, 3)
+        fmt_str = self.read_wide_string(fmt)
+        fmt_cnt = self.get_va_arg_count(fmt_str)
+
+        if not fmt_cnt:
+            self.write_wide_string(fmt_str, buf)
+            return len(fmt_str)
+
+        argv = emu.get_func_argv(e_arch.CALL_CONV_CDECL, 3 + fmt_cnt)[3:]
+        fin = self.do_str_format(fmt_str, argv)
+
+        self.write_wide_string(fin, buf)
+
+        argv = [buf, cnt, fmt] + argv
+        argv[2] = fmt_str
+        return len(fin)
